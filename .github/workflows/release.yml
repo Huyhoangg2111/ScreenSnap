@@ -1,0 +1,36 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ScreenSnap.exe
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File build.ps1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScreenSnap
+          path: dist/ScreenSnap.exe
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/ScreenSnap.exe `
+            --title "ScreenSnap ${{ github.ref_name }}" `
+            --notes "Tai **ScreenSnap.exe** ben duoi va chay truc tiep (Windows 10/11, khong can cai dat). Xem huong dan trong README."
